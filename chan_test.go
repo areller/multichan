@@ -61,7 +61,7 @@ func TestListenerMessages(t *testing.T) {
 	c := New()
 
 	type Msg struct {
-		lis *listener
+		lis *Listener
 		num int
 	}
 	
@@ -69,7 +69,7 @@ func TestListenerMessages(t *testing.T) {
 	lis2 := c.Listen(false)
 	outputChan := make(chan interface{}, 2)
 
-	listen := func (l *listener) {
+	listen := func (l *Listener) {
 		for {
 			msg := <- l.Output()
 			outputChan <- Msg{
@@ -113,7 +113,7 @@ func TestUntilCloseListener(t *testing.T) {
 	go func() {
 		for {
 			select {
-			case <-lis.closeChan:
+			case <-lis.UntilClose():
 				close(done)
 				return
 			case msg := <-lis.Output():
