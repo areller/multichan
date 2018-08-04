@@ -32,6 +32,22 @@ func BenchmarkPubSub(b *testing.B) {
 	}
 }
 
+func BenchmarkManyListeners(b *testing.B) {
+	c := New()
+	for i := 0; i < 100; i++ {
+		lis := c.Listen()
+		go func (l *Listener) {
+			for {
+				<- l.Output()
+			}
+		}(lis)
+	}
+
+	for n := 0; n < b.N; n++ {
+		c.Input() <- n
+	}
+}
+
 func BenchmarkBufferedChannel(b *testing.B) {
 	c := NewWithBuffer(b.N)
 	for n := 0; n < b.N; n++ {
