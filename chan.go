@@ -61,6 +61,13 @@ func (mc *Chan) Listen() *Listener {
 	return lis
 }
 
+func (mc *Chan) ListenBuffered(bufferSize int) *Listener {
+	lis := newBufferedListener(mc, bufferSize)
+	mc.allListeners.Store(lis, true)
+
+	return lis
+}
+
 func (mc *Chan) ListenInfinite() *Listener {
 	lis := newInfiniteListener(mc)
 	mc.allListeners.Store(lis, true)

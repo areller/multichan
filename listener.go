@@ -25,7 +25,11 @@ func (l *Listener) Output() <-chan interface{} {
 }
 
 func newListener(mc *Chan) *Listener {
-	c := make(chan interface{})
+	return newBufferedListener(mc, 0)
+}
+
+func newBufferedListener(mc *Chan, bufferSize int) *Listener {
+	c := make(chan interface{}, bufferSize)
 	return &Listener{
 		mainChan: mc,
 		inputChan: c,

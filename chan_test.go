@@ -159,3 +159,41 @@ func TestInfiniteChan(t *testing.T) {
 	lisA.Close()
 	lisB.Close()
 }
+
+func TestInfiniteListeners(t *testing.T) {
+	c := New()
+	lisA := c.ListenInfinite()
+	lisB := c.ListenInfinite()
+
+	res := tryWithTimeout(shortTime, func () {
+		c.Input() <- 1
+	})
+	assert.True(t, res)
+	res = tryWithTimeout(shortTime, func () {
+		c.Input() <- 2
+	})
+	assert.True(t, res)
+	res = tryWithTimeout(shortTime, func () {
+		c.Input() <- 3
+	})
+	assert.True(t, res)
+
+	res = tryWithTimeout(shortTime, func () {
+		a := <- lisA.Output()
+		b := <- lisA.Output()
+		assert.Equal(t, 1, a)
+		assert.Equal(t, 2, b)
+	})
+	assert.True(t, res)
+
+	res = tryWithTimeout(shortTime, func () {
+		a := <- lisB.Output()
+		b := <- lisB.Output()
+		assert.Equal(t, 1, a)
+		assert.Equal(t, 2, b)
+	})
+	assert.True(t, res)
+
+	lisA.Close()
+	lisB.Close()
+}

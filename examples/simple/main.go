@@ -37,7 +37,7 @@ func (c *Consumer) run() {
 
 func NewConsumer(producer *Producer) *Consumer {
 	c := &Consumer{
-		Event: producer.Event.Listen(true),
+		Event: producer.Event.Listen(),
 	}
 
 	go c.run()
