@@ -6,48 +6,44 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const shortTime = 50 * time.Millisecond
+
 func TestBufferChanInput(t *testing.T) {
 	c := New()
 	c.Close() // We don't want the channel to process messages
-	res := tryWithTimeout(time.Second, func () {
+	res := tryWithTimeout(shortTime, func () {
 		c.Input() <- 1
 	})
 	assert.False(t, res)
 
 	c = NewWithBuffer(1)
 	c.Close()
-	res = tryWithTimeout(time.Second, func () {
+	res = tryWithTimeout(shortTime, func () {
 		c.Input() <- 1
 	})
 	assert.True(t, res)
-	res = tryWithTimeout(time.Second, func () {
+	res = tryWithTimeout(shortTime, func () {
 		c.Input() <- 1
 	})
 	assert.False(t, res)
 }
 
 func TestListenerCreationAndDeletion(t *testing.T) {
-	
 	c := New()
 	assert.Len(t, c.allListeners, 0)
 
-	lis1 := c.Listen(false)
+	lis1 := c.Listen()
 	assert.Len(t, c.allListeners, 1)
 	for k := range c.allListeners {
 		assert.Equal(t, lis1, k)
 	}
 
-	lis2 := c.Listen(false)
+	lis2 := c.Listen()
 	assert.Len(t, c.allListeners, 2)
-	n := 0
+	var last *Listener = nil
 	for k := range c.allListeners {
-		switch n {
-			case 0:
-				assert.Equal(t, lis1, k)
-			case 1:
-				assert.Equal(t, lis2, k)
-		}
-		n++
+		assert.True(t, (k == lis1 || k == lis2) && k != last)
+		last = k
 	}
 
 	lis1.Close()
@@ -65,8 +61,8 @@ func TestListenerMessages(t *testing.T) {
 		num int
 	}
 	
-	lis1 := c.Listen(false)
-	lis2 := c.Listen(false)
+	lis1 := c.Listen()
+	lis2 := c.Listen()
 	outputChan := make(chan interface{}, 2)
 
 	listen := func (l *Listener) {
@@ -97,7 +93,7 @@ func TestListenerMessages(t *testing.T) {
 	assert.Equal(t, 3, o.(Msg).num)
 	assert.Equal(t, lis2, o.(Msg).lis)
 
-	res := tryWithTimeout(time.Second, func() {
+	res := tryWithTimeout(shortTime, func() {
 		<-outputChan
 	})
 	assert.False(t, res)
@@ -105,7 +101,7 @@ func TestListenerMessages(t *testing.T) {
 
 func TestUntilCloseListener(t *testing.T) {
 	c := New()
-	lis := c.Listen(true)
+	lis := c.Listen()
 
 	out := make(chan interface{}, 1)
 	done := make(chan struct{})
@@ -126,9 +122,34 @@ func TestUntilCloseListener(t *testing.T) {
 	assert.Equal(t, 1, (<-out).(int))
 
 	c.Close()
-	res := tryWithTimeout(time.Second, func () {
+	res := tryWithTimeout(shortTime, func () {
 		<- done
 	})
 
 	assert.True(t, res)
+}
+
+func TestInfiniteChan(t *testing.T) {
+	c := NewInfinite()
+	lisA := c.Listen()
+	c.Listen()
+
+	res := tryWithTimeout(shortTime, func () {
+		c.Input() <- 1
+	})
+	assert.True(t, res)
+	res = tryWithTimeout(shortTime, func () {
+		c.Input() <- 2
+	})
+	assert.True(t, res)
+	res = tryWithTimeout(shortTime, func () {
+		c.Input() <- 3
+	})
+	assert.True(t, res)
+
+	res = tryWithTimeout(shortTime, func () {
+		<- lisA.Output()
+		<- lisA.Output()
+	})
+	assert.False(t, res)
 }

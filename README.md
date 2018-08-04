@@ -2,6 +2,10 @@
 Simple Library for Multi-Listener Channels in Go.
 Imagine a regular go channel but one that can have many consumer, all receiving the same messages.
 
+## Why
+This is pattern i find myself using a lot.
+This library is supposed to get rid of all the boilerplate, in my projects and hopefully in yours too.
+
 ## Producer
 ```golang
 c := multichan.New()
