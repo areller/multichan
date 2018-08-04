@@ -14,7 +14,7 @@ func (l *Listener) Close() {
 	l.mainChan.mu.Unlock()
 	
 	if l.closable != nil {
-		//l.closable.Close()
+		l.closable.Close()
 	}
 }
 
