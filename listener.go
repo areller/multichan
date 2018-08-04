@@ -9,12 +9,10 @@ type Listener struct {
 }
 
 func (l *Listener) Close() {
-	l.mainChan.mu.Lock()
-	delete(l.mainChan.allListeners, l)
-	l.mainChan.mu.Unlock()
+	l.mainChan.allListeners.Delete(l)
 	
 	if l.closable != nil {
-		//l.closable.Close()
+		l.closable.Close()
 	}
 }
 

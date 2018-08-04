@@ -30,27 +30,30 @@ func TestBufferChanInput(t *testing.T) {
 
 func TestListenerCreationAndDeletion(t *testing.T) {
 	c := New()
-	assert.Len(t, c.allListeners, 0)
+	assert.Equal(t, 0, syncMapLength(c.allListeners))
 
 	lis1 := c.Listen()
-	assert.Len(t, c.allListeners, 1)
-	for k := range c.allListeners {
+	assert.Equal(t, 1, syncMapLength(c.allListeners))
+	c.allListeners.Range(func (k, v interface{}) bool {
 		assert.Equal(t, lis1, k)
-	}
+		return true
+	})
 
 	lis2 := c.Listen()
-	assert.Len(t, c.allListeners, 2)
-	var last *Listener = nil
-	for k := range c.allListeners {
+	assert.Equal(t, 2, syncMapLength(c.allListeners))
+	var last interface{} = nil
+	c.allListeners.Range(func (k, v interface{}) bool {
 		assert.True(t, (k == lis1 || k == lis2) && k != last)
 		last = k
-	}
+		return true
+	})
 
 	lis1.Close()
-	assert.Len(t, c.allListeners, 1)
-	for k := range c.allListeners {
+	assert.Equal(t, 1, syncMapLength(c.allListeners))
+	c.allListeners.Range(func (k, v interface{}) bool {
 		assert.Equal(t, lis2, k)
-	}
+		return true
+	})
 }
 
 func TestListenerMessages(t *testing.T) {
@@ -132,7 +135,7 @@ func TestUntilCloseListener(t *testing.T) {
 func TestInfiniteChan(t *testing.T) {
 	c := NewInfinite()
 	lisA := c.Listen()
-	c.Listen()
+	lisB := c.Listen()
 
 	res := tryWithTimeout(shortTime, func () {
 		c.Input() <- 1
@@ -152,4 +155,7 @@ func TestInfiniteChan(t *testing.T) {
 		<- lisA.Output()
 	})
 	assert.False(t, res)
+
+	lisA.Close()
+	lisB.Close()
 }

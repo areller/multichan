@@ -10,29 +10,24 @@ type Closable interface {
 
 type Chan struct {
 	closeChan chan int
-	mu sync.RWMutex
 	inputChan chan interface{}
 	outputChan chan interface{}
-	allListeners map[*Listener]bool
+	allListeners *sync.Map
 	closable Closable
 }
 
 func (mc *Chan) sendToAll(msg interface{}) {
-	mc.mu.RLock()
-	defer mc.mu.RUnlock()
-
-	for l := range mc.allListeners {
-		l.inputChan <- msg
-	}
+	mc.allListeners.Range(func (k, v interface{}) bool {
+		k.(*Listener).inputChan <- msg
+		return true
+	})
 }
 
 func (mc *Chan) closeAllListeners() {
-	mc.mu.RLock()
-	defer mc.mu.RUnlock()
-
-	for l := range mc.allListeners {
-		close(l.closeChan)
-	}
+	mc.allListeners.Range(func (k, v interface{}) bool {
+		close(k.(*Listener).closeChan)
+		return true
+	})
 }
 
 func (mc *Chan) run() {
@@ -61,20 +56,14 @@ func (mc *Chan) Close() {
 
 func (mc *Chan) Listen() *Listener {
 	lis := newListener(mc)
-
-	mc.mu.Lock()
-	mc.allListeners[lis] = true
-	mc.mu.Unlock()
+	mc.allListeners.Store(lis, true)
 
 	return lis
 }
 
 func (mc *Chan) ListenInfinite() *Listener {
 	lis := newInfiniteListener(mc)
-
-	mc.mu.Lock()
-	mc.allListeners[lis] = true
-	mc.mu.Unlock()
+	mc.allListeners.Store(lis, true)
 
 	return lis
 }
@@ -92,7 +81,7 @@ func NewWithBuffer(bufferSize int) *Chan {
 	c := &Chan{
 		inputChan: inAndOut,
 		outputChan: inAndOut,
-		allListeners: make(map[*Listener]bool),
+		allListeners: new(sync.Map),
 		closeChan: make(chan int),
 	}	
 
@@ -105,7 +94,7 @@ func NewInfinite() *Chan {
 	c := &Chan{
 		inputChan: inf.inChan,
 		outputChan: inf.outChan,
-		allListeners: make(map[*Listener]bool),
+		allListeners: new(sync.Map),
 		closeChan: make(chan int),
 		closable: inf,
 	}
