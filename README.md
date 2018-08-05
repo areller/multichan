@@ -79,8 +79,6 @@ Listener #1 was closed due to its channel closing
 Listener #2 was closed due to its channel closing
 ```
 
-**Note** `UntilClose` won't trigger if the channel is killed directly (via `listener.Close()`)
-
 ## Buffering
 You can create buffered channels and listeners
 ```golang

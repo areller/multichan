@@ -14,6 +14,8 @@ func (l *Listener) Close() {
 	if l.closable != nil {
 		l.closable.Close()
 	}
+
+	close(l.closeChan)
 }
 
 func (l *Listener) UntilClose() <-chan struct{} {

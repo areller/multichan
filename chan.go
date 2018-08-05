@@ -25,7 +25,8 @@ func (mc *Chan) sendToAll(msg interface{}) {
 
 func (mc *Chan) closeAllListeners() {
 	mc.allListeners.Range(func (k, v interface{}) bool {
-		close(k.(*Listener).closeChan)
+		l := k.(*Listener)
+		l.Close()
 		return true
 	})
 }
