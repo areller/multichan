@@ -197,3 +197,26 @@ func TestInfiniteListeners(t *testing.T) {
 	lisA.Close()
 	lisB.Close()
 }
+
+func TestAttach(t *testing.T) {
+	c := New()
+	lis := c.Listen()
+
+	msgs := make(chan interface{}, 3)
+	lis.Attach(func (msg interface{}) {
+		msgs <- msg
+	})
+
+	assert.True(t, sendWithTimeout(shortTime, c.Input(), 1))
+	assert.True(t, sendWithTimeout(shortTime, c.Input(), 2))
+	assert.True(t, sendWithTimeout(shortTime, c.Input(), 3))
+
+	assert.Equal(t, makeST(1, true), makeST(recvWithTimeout(shortTime, msgs)))
+	assert.Equal(t, makeST(2, true), makeST(recvWithTimeout(shortTime, msgs)))
+	assert.Equal(t, makeST(3, true), makeST(recvWithTimeout(shortTime, msgs)))
+	assert.Equal(t, makeST(nil, false), makeST(recvWithTimeout(shortTime, msgs)))
+
+	lis.Close()
+	assert.True(t, sendWithTimeout(shortTime, c.Input(), 4))
+	assert.Equal(t, makeST(nil, false), makeST(recvWithTimeout(shortTime, msgs)))
+}

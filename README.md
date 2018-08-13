@@ -132,5 +132,26 @@ c := multichan.NewInfinite()
 listener := c.ListenInfinite()
 ```
 
+## Attach
+It is possible to attach a `func` to a `Listener`, the listener would spawn a thread which reads messages from its output channel and reports the `func`.
+```golang
+c := multichan.New()
+listener := c.Listen()
+listener.Attach(func (msg interface{}) {
+    fmt.Println(msg)
+})
+c.Input() <- 1
+c.Input() <- 2
+listener.Close()
+c.Input() <- 3
+```
+
+Would print
+
+```
+1
+2
+```
+
 ## More Examples
 Go to [this](./examples) folder for more examples

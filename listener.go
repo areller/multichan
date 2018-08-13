@@ -26,6 +26,19 @@ func (l *Listener) Output() <-chan interface{} {
 	return l.outputChan
 }
 
+func (l *Listener) Attach(del func (msg interface{})) {
+	go func(l *Listener, del func (msg interface{})) {
+		for {
+			select {
+			case <-l.UntilClose():
+				return
+			case msg := <-l.Output():
+				del(msg)
+			}
+		}
+	}(l, del)
+}
+
 func newListener(mc *Chan) *Listener {
 	return newBufferedListener(mc, 0)
 }
